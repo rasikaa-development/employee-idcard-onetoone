@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "Q1 - Employee ID Card (One-to-One)",
+    "description": "Run the requests top to bottom (or use Collection Runner). IDs are captured automatically into collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "employeeId", "value": "" },
+    { "key": "cardId", "value": "" },
+    { "key": "cardNumber", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Create Employee with ID Card",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('Location header present', () => pm.response.to.have.header('Location'));",
+              "const body = pm.response.json();",
+              "pm.test('ID card saved with the employee', () => pm.expect(body.idCard).to.have.property('cardId'));",
+              "pm.collectionVariables.set('employeeId', body.employeeId);",
+              "pm.collectionVariables.set('cardId', body.idCard.cardId);",
+              "pm.collectionVariables.set('cardNumber', body.idCard.cardNumber);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeName\": \"Ravi Kumar\",\n  \"department\": \"Engineering\",\n  \"idCard\": {\n    \"cardNumber\": \"WMT-{{$timestamp}}\",\n    \"issueDate\": \"2026-01-15\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/employees"
+      }
+    },
+    {
+      "name": "2. Get All Employees",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('returns a list', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/employees" }
+    },
+    {
+      "name": "3. Get Employee by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('employee has its ID card', () => pm.expect(body.idCard.cardId).to.eql(Number(pm.collectionVariables.get('cardId'))));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/employees/{{employeeId}}" }
+    },
+    {
+      "name": "4. Update Employee and ID Card",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('department updated', () => pm.expect(body.department).to.eql('Platform Engineering'));",
+              "pm.test('same card updated in place', () => pm.expect(body.idCard.cardId).to.eql(Number(pm.collectionVariables.get('cardId'))));",
+              "pm.test('issue date updated', () => pm.expect(body.idCard.issueDate).to.eql('2026-06-01'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeName\": \"Ravi Kumar\",\n  \"department\": \"Platform Engineering\",\n  \"idCard\": {\n    \"cardNumber\": \"{{cardNumber}}\",\n    \"issueDate\": \"2026-06-01\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/employees/{{employeeId}}"
+      }
+    },
+    {
+      "name": "5. Get All ID Cards (with owner)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('returns a list', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/idcards" }
+    },
+    {
+      "name": "6. Get ID Card by ID (belongs to one employee)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('card belongs to the employee', () => pm.expect(body.employee.employeeId).to.eql(Number(pm.collectionVariables.get('employeeId'))));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/idcards/{{cardId}}" }
+    },
+    {
+      "name": "7. Duplicate Card Number (409)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeName\": \"Priya Sharma\",\n  \"department\": \"HR\",\n  \"idCard\": {\n    \"cardNumber\": \"{{cardNumber}}\",\n    \"issueDate\": \"2026-02-10\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/employees"
+      }
+    },
+    {
+      "name": "8. Employee without ID Card (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('idCard error reported', () => pm.expect(pm.response.json().errors).to.have.property('idCard'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeName\": \"No Card\",\n  \"department\": \"HR\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/employees"
+      }
+    },
+    {
+      "name": "9. Delete Employee (cascades to ID Card)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/employees/{{employeeId}}" }
+    },
+    {
+      "name": "10. Get Deleted Employee (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/employees/{{employeeId}}" }
+    },
+    {
+      "name": "11. Get Deleted ID Card (404 - removed by cascade)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/idcards/{{cardId}}" }
+    }
+  ]
+}

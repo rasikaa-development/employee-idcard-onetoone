@@ -1,0 +1,19 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: employee-idcard-onetoone
+  datasource:
+    url: jdbc:mysql://localhost:3306/employeedb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    # entities are mapped to DTOs inside @Transactional service methods,
+    # so no lazy loading is needed while the JSON response is written
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
